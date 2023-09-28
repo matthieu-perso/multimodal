@@ -1,4 +1,7 @@
-# Setting up Kubernetes for deploying LLM Chat models in production.
+# Setting up Kubernetes for deploying Multimodal LLama 7B in production.
+
+
+Welcome ! Quick example for my implementation of the Multimodal k8s cluster. 
 
 ### Your environment
 The commands to set this up were initially executed on a WSL Ubuntu 22.04 LTS instance running on Windows 11. This should work for Windows, MacOS, and Linux, as long as the prerequisites are properly installed and configured.
@@ -22,9 +25,9 @@ The Metrics API is used to monitor the cluster's resource usage. This is require
 kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 ```
 
-#### Llama v2 13b 4-bit quantized model
+#### Llama v2 7b
 ```Shell
-kubectl apply -f services/llama-13b-4bit-quantized/llama-13b-4bit-quantized.yaml
+kubectl apply -f services/llama-7b-v1/llama-7b-v1.yaml
 ```
 
 ### Setting up NGINX Ingress Controller
@@ -43,7 +46,7 @@ kubectl apply -f ingress/ingress.yaml
 kubectl get ingress ingress-llm-production
 ```
 
-Use the "Address" field from the output to make requests to the LLM endpoint. For example, if the address is `a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6-1234567890.us-east-1.elb.amazonaws.com`, then the LLM endpoint can be accessed at `http://a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6-1234567890.us-east-1.elb.amazonaws.com/llm-chat-api/v1/llm-chat`.
+Use the "Address" field from the output to make requests to the LLM endpoint. For example, if the address is `a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6-1234567890.us-east-1.elb.amazonaws.com`, then the LLM endpoint can be accessed .
 
 
 ### Adding new models 
@@ -52,7 +55,8 @@ Use the "Address" field from the output to make requests to the LLM endpoint. Fo
 - Add a yaml file - taking example on the other directories.
 - Add the path to the ingress.yaml file 
 
-### Example Python client (endpoint up to date as of August 2, 2023)
+### Example Python client
+
 ```Python
 from datetime import datetime
 import requests
