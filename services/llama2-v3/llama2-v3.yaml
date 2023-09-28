@@ -1,41 +1,36 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-    name: chronos-13b-v2-deployment
+    name: llama2-v3-deployment
 spec:
     replicas: 1
     selector:
         matchLabels:
-            app: chronos-13b-v2
+            app: llama2-v3
     template:
         metadata:
             labels:
-                app: chronos-13b-v2
+                app: llama2-v3
         spec:
             containers:
-                - name: chronos-13b-v2-app
-                  image: ghcr.io/huggingface/text-generation-inference:1.0.0
-                  args: ['--model-id', 'elinas/chronos-13b-v2', '--quantize', 'gptq']
-                  env:
-                      - name: GPTQ_BITS
-                        value: '4'
-                      - name: GPTQ_GROUPSIZE
-                        value: '1'
+                - name: llama2-v3-app
+                  image: ghcr.io/multimodal-image
+                  args: ['--model-id', 'llama2-v3']
                   ports:
                       - containerPort: 80
             nodeSelector:
-                node.kubernetes.io/instance-type: g5.xlarge
+                node.kubernetes.io/instance-type: g5.12xlarge
 
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-    name: chronos-13b-v2-hpa
+    name: llama2-v3-hpa
 spec:
     scaleTargetRef:
         apiVersion: apps/v1
         kind: Deployment
-        name: chronos-13b-v2-deployment
+        name: llama2-v3-deployment
     minReplicas: 1
     maxReplicas: 5
     metrics:
@@ -50,10 +45,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-    name: chronos-13b-v2-service
+    name: llama2-v3-service
 spec:
     selector:
-        app: chronos-13b-v2
+        app: llama2-v3
     ports:
         - protocol: TCP
           port: 8080
