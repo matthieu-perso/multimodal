@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-llm-production
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /llama2-v1(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: llama2-v1-service
+            port:
+              number: 80
+      - path: /llama2-v2(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: llama2-v2-service
+            port:
+              number: 80
+      - path: /llama2-v3(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: llama2-v3-service
+            port:
+              number: 80

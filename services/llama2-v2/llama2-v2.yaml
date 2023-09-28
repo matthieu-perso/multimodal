@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: llama-v2-13b-4bit-quantized-deployment
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: llama-v2-13b-4bit-quantized
+    template:
+        metadata:
+            labels:
+                app: llama-v2-13b-4bit-quantized
+        spec:
+            containers:
+                - name: llama-v2-13b-4bit-quantized-app
+                  image: ghcr.io/huggingface/text-generation-inference:1.0.0
+                  args: ['--model-id', 'TheBloke/Llama-2-13B-chat-GPTQ', '--quantize', 'gptq']
+                  env:
+                      - name: GPTQ_BITS
+                        value: '4'
+                      - name: GPTQ_GROUPSIZE
+                        value: '1'
+                  ports:
+                      - containerPort: 80
+            nodeSelector:
+                node.kubernetes.io/instance-type: g5.xlarge
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+    name: llama-v2-13b-4bit-quantized-hpa
+spec:
+    scaleTargetRef:
+        apiVersion: apps/v1
+        kind: Deployment
+        name: llama-v2-13b-4bit-quantized-deployment
+    minReplicas: 1
+    maxReplicas: 5
+    metrics:
+        - type: Resource
+          resource:
+              name: cpu
+              target:
+                  type: Utilization
+                  averageUtilization: 75
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: llama-v2-13b-4bit-quantized-service
+spec:
+    selector:
+        app: llama-v2-13b-4bit-quantized
+    ports:
+        - protocol: TCP
+          port: 8080
+          targetPort: 80
