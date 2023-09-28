@@ -61,7 +61,8 @@ Use the "Address" field from the output to make requests to the LLM endpoint. Fo
 from datetime import datetime
 import requests
 
-endpoint = "http://a4038e84b9d784ea68e58b325cc447db-193951390.us-east-1.elb.amazonaws.com/llama-v2-13b-quantized/generate_stream" # 
+# We would apply the vpc links in production
+endpoint = "http://a4038e84b9d784ea68e58b325cc447db-193951390.us-east-1.elb.amazonaws.com/llama2-v1" # 
 
 def get_stream(data, headers):
     print("Getting stream")
