@@ -1,0 +1,74 @@
+name: Deploy to Kubernetes (AWS)
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_REGION: us-east-1
+  CLUSTER_NAME: llm-chat-prod
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Install prerequisites
+      run: |
+        curl --silent --location "https://github.com/eksctl-io/eksctl/releases/download/v0.151.0/eksctl_Linux_amd64.tar.gz" | tar xz -C /tmp
+        sudo mv /tmp/eksctl /usr/local/bin
+        curl --location --request GET 'https://dl.k8s.io/release/v1.27.4/bin/linux/amd64/kubectl' --output /tmp/kubectl
+        chmod +x /tmp/kubectl
+        sudo mv /tmp/kubectl /usr/local/bin/kubectl
+
+    - name: Check if cluster exists
+      id: check_cluster
+      run: |
+        if eksctl get cluster --name ${{ env.CLUSTER_NAME }} --region ${{ env.AWS_REGION }}; then
+          echo "::set-output name=exists::true"
+        else
+          echo "::set-output name=exists::false"
+        fi
+
+    - name: Create Cluster
+      run: |
+        if [ "${{ steps.check_cluster.outputs.exists }}" == "false" ]; then
+          eksctl create cluster --name ${{ env.CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
+        fi
+
+    - name: Update kubeconfig
+      run: |
+        aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.CLUSTER_NAME }}
+
+    - name: Apply Metrics API
+      run: |
+        kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+    - name: Deploy Services
+      run: |
+        for filename in k8s/services/*/*.yaml; do
+          echo "$filename"
+          kubectl apply -f "./$filename"
+        done
+
+
+    - name: Deploy NGINX Ingress Controller
+      run: |
+        kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.1/deploy/static/provider/cloud/deploy.yaml
+        kubectl apply -f ./k8s/ingress/ingress.yaml
+
+    - name: Get public IP
+      run: |
+        kubectl get ingress ingress-llm-production
